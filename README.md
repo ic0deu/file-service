@@ -6,7 +6,7 @@ An API for file upload based on Spring Boot
 
 ## LICENSE
 
-Copyright 2013 Netflix, Inc.
+Copyright 2016 i.c0d.eu
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
