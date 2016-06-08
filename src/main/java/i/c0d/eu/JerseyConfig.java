@@ -8,9 +8,6 @@ import org.springframework.stereotype.Component;
 
 import javax.ws.rs.ApplicationPath;
 
-/**
- * Created by antonio on 18/05/2016.
- */
 @Component
 @ApplicationPath("/rest")
 public class JerseyConfig extends ResourceConfig {
