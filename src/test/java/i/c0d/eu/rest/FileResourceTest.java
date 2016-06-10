@@ -46,7 +46,7 @@ public class FileResourceTest {
                 .expect()
                 .body("files", hasSize(1))
                 .body("files[0].name", containsString("FileToUpload"))
-                .statusCode(HttpStatus.SC_OK)
+                .statusCode(HttpStatus.SC_CREATED)
                 .when().log().all().post("/rest/v1/files/{id}", "ds")
                 .then()
                 .extract()

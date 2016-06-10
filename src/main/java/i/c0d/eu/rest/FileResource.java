@@ -1,37 +1,26 @@
 package i.c0d.eu.rest;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.util.JSONPObject;
-import i.c0d.eu.resource.FileMetadata;
 import i.c0d.eu.resource.UploadResponse;
-import org.glassfish.jersey.media.multipart.FormDataBodyPart;
-import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
-import org.glassfish.jersey.media.multipart.FormDataMultiPart;
-import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.util.FileCopyUtils;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
-import javax.servlet.annotation.MultipartConfig;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.*;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import javax.servlet.http.HttpServletResponse;
 import java.io.*;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.Optional;
 
 /**
  * Created by antonio on 18/05/2016.
  */
-@Component
-@Path("/v1/files")
+@RestController
+@RequestMapping("rest/v1/files")
 public class FileResource {
 
     private static final Logger logger = LoggerFactory.getLogger(FileResource.class);
@@ -42,50 +31,46 @@ public class FileResource {
     private String STATIC_FILE_LOCATION;
     @Value("${max_content_length}")
     private int MAX_CONTENT_LENGTH;
+    @Value("${success_page_url}")
+    private String SUCCESS_PAGE_URL;
 
-
-    @POST
-    @Path("{fileId}")
-    @Consumes(MediaType.MULTIPART_FORM_DATA)
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response upload(@Context final HttpServletRequest request,
-                           @PathParam("fileId") String fileId,
-                           @FormDataParam("fileDescription") FormDataBodyPart jsonPart,
-                           @FormDataParam("files[]") List<FormDataBodyPart> parts) throws IOException {
+    @RequestMapping(method = RequestMethod.POST, value = "/{fileId}", consumes = "multipart/form-data" , produces =  "application/json" )
+    public ResponseEntity<UploadResponse> upload(
+                                 @PathVariable String fileId,
+                                 @RequestParam("files[]") MultipartFile[] files,
+                                 HttpServletResponse response) throws IOException {
         logger.info("fileId: {}", fileId);
-        int contentLength = request.getContentLength();
-        if ( contentLength > MAX_CONTENT_LENGTH ) {
-            logger.error("File is too big !!!");
-            throw new WebApplicationException("File is too big !!!");
-        }
-        if (jsonPart != null) {
-            jsonPart.setMediaType(MediaType.APPLICATION_JSON_TYPE);
-            FileMetadata[] fileMetadata = jsonPart.getValueAs(FileMetadata[].class);
-            Arrays.stream(fileMetadata).forEach( e -> System.out.println(e.toString()));
-        }
-        UploadResponse uploadResponse = new UploadResponse();
-        for (FormDataBodyPart part : parts) {
-            FormDataContentDisposition disp = part.getFormDataContentDisposition();
-            InputStream in = part.getValueAs(InputStream.class);
-            String fileName = new StringBuilder().append(fileId).append(new Date().getTime()).append(disp.getFileName()).toString().trim();
-            logger.info("Processing file named: {}", fileName);
-            File file = new File(UPLOAD_PATH + fileName);
-            try {
-                int read;
-                byte[] bytes = new byte[1024];
-                OutputStream out = new FileOutputStream(file);
-                while ((read = in.read(bytes)) != -1) {
-                    out.write(bytes, 0, read);
-                }
-                out.flush();
-                out.close();
-                uploadResponse.addFile(fileName, file.length(), fileName, fileName, fileName, "DELETE", Optional.empty());
-            } catch (IOException e) {
-                uploadResponse.addFile(fileName, file.length(), "", "", "", "", Optional.of("Error while uploading"));
-            }
 
+        UploadResponse uploadResponse = new UploadResponse();
+        Arrays.stream(files).forEach(file -> {
+
+            if (!file.isEmpty()) {
+                String fileName = new StringBuilder().append(fileId).append(new Date().getTime()).append(file.getOriginalFilename()).toString().trim();
+                File newFile = new File(UPLOAD_PATH + fileName);
+                try {
+                    BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(newFile));
+                    FileCopyUtils.copy(file.getInputStream(), stream);
+                    uploadResponse.addFile(fileName, newFile.length(), fileName, fileName, fileName, "DELETE", Optional.empty());
+
+                    stream.close();
+                    logger.info("File {} succesfully uploaded", fileName);
+                }
+                catch (Exception e) {
+                    logger.info("Error while uploading file: {}", fileName);
+                    uploadResponse.addFile(fileName, newFile.length(), "", "", "", "", Optional.of("Error while uploading"));
+                }
+            }
+        });
+
+        if (!SUCCESS_PAGE_URL.isEmpty()) {
+            response.sendRedirect(SUCCESS_PAGE_URL);
         }
-        return Response.ok(uploadResponse).build();
+
+        return new ResponseEntity<>(uploadResponse, HttpStatus.CREATED);
+
+
     }
+
+
 
 }

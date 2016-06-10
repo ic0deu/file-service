@@ -17,6 +17,7 @@ public class StaticResourceConfiguration extends WebMvcConfigurerAdapter {
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         if ( ! staticFiles.isEmpty() ) {
+            staticFiles += staticFiles.endsWith("/") ? "" : "/";
             registry.addResourceHandler("/**").addResourceLocations("file:" + staticFiles);
         }
     }

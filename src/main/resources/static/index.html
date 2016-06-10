@@ -2,21 +2,14 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <script src="webjars/jquery/2.2.4/jquery.min.js"></script>
-    <script type="text/javascript">
-        $(document).ready(function() {
-            $('h1').animate({
-                fontSize: '48px'
-            }, "slow");
-        });
-    </script>
+
     <title>Post Files</title>
 </head>
 
 <h1>Post Files</h1>
 
 <form id="file_form" action="rest/v1/files/0001" method="post" enctype="multipart/form-data">
-    <p>Select a file : <input id="photo" type="file" name="files[]" size="45" multiple="multiple" accept="image/*;capture=camera" /></p>
+    <p>Select a file : <input id="files" type="file" name="files[]" size="45" multiple="multiple" accept="image/*;capture=camera" /></p>
 
     <input type="submit" value="Upload" />
 </form>
