@@ -2,7 +2,7 @@
 ![][codeship img]
 [![][license img]][license]
 
-An API for file upload based on Spring Boot
+An API for file upload based on Spring Boot.
 
 ## LICENSE
 
