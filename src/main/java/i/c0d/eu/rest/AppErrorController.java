@@ -46,7 +46,8 @@ public class AppErrorController implements ErrorController {
         }
 
         if ( body.get("message").toString().contains("Connection terminated as request was larger than") ||
-                body.get("message").toString().contains("Connection terminated parsing multipart data")) {
+                body.get("message").toString().contains("Connection terminated parsing multipart data") ||
+                body.get("message").toString().contains("The maximum size") ) {
             logger.info("Customising response for payload too large");
             status = HttpStatus.PAYLOAD_TOO_LARGE;
             body.put("status", HttpStatus.PAYLOAD_TOO_LARGE.value());

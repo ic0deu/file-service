@@ -12,6 +12,14 @@
     <name>file-service</name>
     <description>File Service</description>
 
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
@@ -23,6 +31,21 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>1.8</java.version>
     </properties>
+
+    <repositories>
+        <repository>
+            <id>ic0deu-releases</id>
+            <name>ic0deu's Git based repo</name>
+            <url>https://rawgit.com/ic0deu/maven-repo/master/</url>
+        </repository>
+    </repositories>
+
+    <distributionManagement>
+        <repository>
+            <id>repo</id>
+            <url>https://rawgit.com/ic0deu/maven-repo/master/</url>
+        </repository>
+    </distributionManagement>
 
     <dependencies>
         <dependency>
@@ -70,6 +93,7 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
+
         </plugins>
     </build>
 
