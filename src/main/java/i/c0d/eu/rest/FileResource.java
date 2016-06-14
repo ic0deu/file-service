@@ -46,6 +46,10 @@ public class FileResource {
 
             if (!file.isEmpty()) {
                 String fileName = new StringBuilder().append(fileId).append(new Date().getTime()).append(file.getOriginalFilename()).toString().trim();
+
+                if ( ! UPLOAD_PATH.isEmpty() ) {
+                    UPLOAD_PATH += UPLOAD_PATH.endsWith("/") ? "" : "/";
+                }
                 File newFile = new File(UPLOAD_PATH + fileName);
                 try {
                     BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(newFile));
