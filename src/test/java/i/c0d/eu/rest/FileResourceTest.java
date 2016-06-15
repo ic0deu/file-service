@@ -19,6 +19,7 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import java.io.File;
 
 import static com.jayway.restassured.RestAssured.given;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -47,18 +48,15 @@ public class FileResourceTest {
                 .multiPart("files[]", new File(String.valueOf(Resources.getResource("FileToUpload.txt").getFile())))
                 .expect()
                 .body("files", hasSize(1))
-                .body("files[0].name", containsString("FileToUpload"))
+                .body("files[0].name", containsString("ds-"))
                 .statusCode(HttpStatus.SC_CREATED)
                 .when().log().all().post("/rest/v1/files/{id}", "ds")
                 .then()
                 .extract()
                 .path("files[0].name");
         File file = new File(upload_path+fileName);
-        if(file.delete()){
-            System.out.println(file.getName() + " is deleted!");
-        }else{
-            System.out.println("Delete operation is failed.");
-        }
+
+        assertThat("File has been deleted" , file.delete());
     }
 
     @Test
@@ -67,7 +65,7 @@ public class FileResourceTest {
                 .multiPart("files[]", new File(String.valueOf(Resources.getResource("FileToUpload.txt").getFile())))
                 .expect()
                 .body("files", hasSize(1))
-                .body("files[0].name", containsString("FileToUpload"))
+                .body("files[0].name",  containsString("123456-"))
                 .statusCode(HttpStatus.SC_CREATED)
                 .when().log().all().post("/rest/v1/files/{id}", "123456")
                 .then()
@@ -81,16 +79,78 @@ public class FileResourceTest {
                 .body("files[0]", containsString("123456"))
                 .statusCode(HttpStatus.SC_ACCEPTED)
                 .contentType(ContentType.JSON)
-                .when().log().all().get("/rest/v1/files/{id}", "123456")
+                .when().log().all().get("/rest/v1/files/{id}", "123456");
+        File file = new File(upload_path+fileName);
+
+        assertThat("File has been deleted" , file.delete());
+    }
+
+    @Test
+    public void tag_test() {
+        String fileName = given().log().all()
+                .multiPart("files[]", new File(String.valueOf(Resources.getResource("FileToUpload.txt").getFile())))
+                .expect()
+                .body("files", hasSize(1))
+                .body("files[0].name",  containsString("123456-"))
+                .statusCode(HttpStatus.SC_CREATED)
+                .when().log().all().post("/rest/v1/files/{id}", "123456")
                 .then()
                 .extract()
-                .path("files[0]");
-        File file = new File(upload_path+fileName);
-        if(file.delete()){
-            System.out.println(file.getName() + " is deleted!");
-        }else{
-            System.out.println("Delete operation is failed.");
-        }
+                .path("files[0].name");
+
+        String fileNameWithoutExtension = fileName.substring(0, fileName.lastIndexOf("."));
+        String extension = fileName.substring(fileName.lastIndexOf("."));
+        String newFileName = fileNameWithoutExtension + "-ci" + extension;
+        given().log().all()
+                .body("{\"fileName\": \"" + fileName + "\",\"tag\": \"ci\"}")
+                .contentType(ContentType.JSON)
+                .expect()
+                .body("oldFileName", containsString(fileName))
+                .body("newFileName", containsString(newFileName))
+                .statusCode(HttpStatus.SC_ACCEPTED)
+                .contentType(ContentType.JSON)
+                .when().log().all().put("/rest/v1/files/");
+        File file = new File(upload_path+newFileName);
+        assertThat("File has been deleted" , file.delete());
+    }
+
+    @Test
+    public void multiple_tag_test() {
+        String fileName = given().log().all()
+                .multiPart("files[]", new File(String.valueOf(Resources.getResource("FileToUpload.txt").getFile())))
+                .expect()
+                .body("files", hasSize(1))
+                .body("files[0].name",  containsString("123456-"))
+                .statusCode(HttpStatus.SC_CREATED)
+                .when().log().all().post("/rest/v1/files/{id}", "123456")
+                .then()
+                .extract()
+                .path("files[0].name");
+
+        String fileNameWithoutExtension = fileName.substring(0, fileName.lastIndexOf("."));
+        String extension = fileName.substring(fileName.lastIndexOf("."));
+        String newFileName = fileNameWithoutExtension + "-ci" + extension;
+        given().log().all()
+                .body("{\"fileName\": \"" + fileName + "\",\"tag\": \"ci\"}")
+                .contentType(ContentType.JSON)
+                .expect()
+                .body("oldFileName", containsString(fileName))
+                .body("newFileName", containsString(newFileName))
+                .statusCode(HttpStatus.SC_ACCEPTED)
+                .contentType(ContentType.JSON)
+                .when().log().all().put("/rest/v1/files/");
+
+        given().log().all()
+                .body("{\"fileName\": \"" + newFileName + "\",\"tag\": \"ci\"}")
+                .contentType(ContentType.JSON)
+                .expect()
+                .statusCode(HttpStatus.SC_CONFLICT)
+                .contentType(ContentType.JSON)
+                .when().log().all().put("/rest/v1/files/");
+        File file = new File(upload_path+newFileName);
+
+
+        assertThat("File has been deleted" , file.delete());
     }
 
 }
