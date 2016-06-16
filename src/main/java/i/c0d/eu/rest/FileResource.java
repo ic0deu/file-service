@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 /**
  * Created by antonio on 18/05/2016.
  */
+@CrossOrigin
 @RestController
 @RequestMapping("rest/v1/files")
 public class FileResource {
