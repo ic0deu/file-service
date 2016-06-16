@@ -1,5 +1,6 @@
 package i.c0d.eu.rest;
 
+import i.c0d.eu.exception.ExtensionReplacementException;
 import i.c0d.eu.exception.TagDuplicationException;
 import i.c0d.eu.exception.TagFileNotFoundException;
 import i.c0d.eu.exception.TagRenameException;
@@ -41,6 +42,8 @@ public class FileResource {
     private int MAX_CONTENT_LENGTH;
     @Value("${success_page_url}")
     private String SUCCESS_PAGE_URL;
+    @Value("${fileName_tag_separator}")
+    private String FILENAME_TAG_SEPARATOR;
 
 
 
@@ -57,7 +60,7 @@ public class FileResource {
         Arrays.stream(files).forEach(file -> {
 
             if (!file.isEmpty()) {
-                String fileName = new StringBuilder().append(fileId).append(fileId.endsWith("-") ? "" : "-").append(new Date().getTime()).append(file.getOriginalFilename().substring(file.getOriginalFilename().lastIndexOf("."))).toString().trim();
+                String fileName = new StringBuilder().append(fileId).append(fileId.endsWith(FILENAME_TAG_SEPARATOR) ? "" : FILENAME_TAG_SEPARATOR).append(new Date().getTime()).append(file.getOriginalFilename().substring(file.getOriginalFilename().lastIndexOf("."))).toString().trim();
 
                 if ( ! UPLOAD_PATH.isEmpty() ) {
                     UPLOAD_PATH += UPLOAD_PATH.endsWith("/") ? "" : "/";
@@ -112,19 +115,30 @@ public class FileResource {
         if (tag.getFileName().isEmpty()) {
             throw new RuntimeException("Filename must be valid");
         }
+
         if ( ! UPLOAD_PATH.isEmpty() ) {
             UPLOAD_PATH += UPLOAD_PATH.endsWith("/") ? "" : "/";
         }
+
         TagResponse response = new TagResponse();
         String fileName = tag.getFileName().replace("/","");
         File oldFile = new File(UPLOAD_PATH + fileName);
         if (oldFile.isFile()) {
-            String fileNameWithoutExtension = fileName.substring(0, fileName.lastIndexOf("."));
-            if (fileNameWithoutExtension.contains("-" + tag.getTag())) {
-                throw new TagDuplicationException();
+            String newFileName;
+            if ( tag.getNewFileName().isEmpty() ) {
+                String fileNameWithoutExtension = fileName.substring(0, fileName.lastIndexOf("."));
+                if (fileNameWithoutExtension.toUpperCase().contains(FILENAME_TAG_SEPARATOR + tag.getTag().toUpperCase())) {
+                    throw new TagDuplicationException();
+                }
+                String extension = fileName.substring(fileName.lastIndexOf("."));
+                newFileName = fileNameWithoutExtension + FILENAME_TAG_SEPARATOR + tag.getTag() + extension;
+            } else {
+                newFileName = tag.getNewFileName().replace("/","");
+                // Checking for extension replacement
+                if ( ! newFileName.toUpperCase().contains(fileName.substring(fileName.lastIndexOf(".")).toUpperCase())) {
+                    throw new ExtensionReplacementException();
+                }
             }
-            String extension = fileName.substring(fileName.lastIndexOf("."));
-            String newFileName = fileNameWithoutExtension + "-" + tag.getTag() + extension;
 
             response.setOldFileName(fileName);
             response.setNewFileName(newFileName);
@@ -157,6 +171,12 @@ public class FileResource {
     @ResponseStatus(value=HttpStatus.CONFLICT, reason="Failed to rename")  // 409
     @ExceptionHandler(TagRenameException.class)
     public void failedRenamingHandler() {
+        // Nothing to do
+    }
+
+    @ResponseStatus(value=HttpStatus.UNPROCESSABLE_ENTITY, reason="Cannot change file extension")  // 422
+    @ExceptionHandler(ExtensionReplacementException.class)
+    public void extensionReplacementHandler() {
         // Nothing to do
     }
 

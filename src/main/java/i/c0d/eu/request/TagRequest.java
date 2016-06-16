@@ -10,7 +10,9 @@ public class TagRequest {
     @JsonProperty
     private String fileName;
     @JsonProperty
-    private String tag;
+    private String tag = "";
+    @JsonProperty
+    private String newFileName = "";
 
     public String getFileName() {
         return fileName;
@@ -26,5 +28,13 @@ public class TagRequest {
 
     public void setTag(String tag) {
         this.tag = tag;
+    }
+
+    public String getNewFileName() {
+        return newFileName;
+    }
+
+    public void setNewFileName(String newFileName) {
+        this.newFileName = newFileName;
     }
 }
