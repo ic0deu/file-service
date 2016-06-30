@@ -8,8 +8,10 @@ import i.c0d.eu.request.TagRequest;
 import i.c0d.eu.resource.FileListResponse;
 import i.c0d.eu.resource.TagResponse;
 import i.c0d.eu.resource.UploadResponse;
+import i.c0d.eu.service.FileNotifierService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -45,8 +47,14 @@ public class FileResource {
     private String SUCCESS_PAGE_URL;
     @Value("${fileName_tag_separator}")
     private String FILENAME_TAG_SEPARATOR;
+    @Value("${trigger.enabled}")
+    private Boolean TRIGGER_ENABLED;
+    private final FileNotifierService fileNotifierService;
 
-
+    @Autowired
+    public FileResource(FileNotifierService fileNotifierService) {
+        this.fileNotifierService = fileNotifierService;
+    }
 
     @RequestMapping(method = RequestMethod.POST, value = "/{fileId}", consumes = "multipart/form-data" , produces =  "application/json" )
     public ResponseEntity<UploadResponse> upload(
@@ -74,7 +82,6 @@ public class FileResource {
 
                     stream.close();
                     logger.info("File {} succesfully uploaded", fileName);
-
                 }
                 catch (Exception e) {
                     logger.info("Error while uploading file: {}", fileName);
@@ -85,6 +92,20 @@ public class FileResource {
 
         if (!SUCCESS_PAGE_URL.isEmpty()) {
             response.sendRedirect(SUCCESS_PAGE_URL);
+        }
+
+        if ( TRIGGER_ENABLED ) {
+            try {
+
+                if (fileNotifierService.notifyEvent(fileId)) {
+                    logger.info("Successfully fileId {} notified", fileId);
+                } else {
+                    logger.error("Error while notifying fileId {}", fileId);
+                }
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
 
         return new ResponseEntity<>(uploadResponse, HttpStatus.CREATED);
